@@ -38,7 +38,7 @@ const server = http.createServer((req, res) => {
         <div class="card">
             <span class="rocket">🚀</span>
             <h1>Hello, I'm Odo Kingsley Uchenna!</h1>
-            <p>I'm currently reaching out to you from a containerized <strong>Node.js</strong> app running on <strong>Amazon ECS</strong>.</p>
+            <p>I'm currently reaching out to you from a containerized <strong>app.js</strong> app running on <strong>Amazon ECS</strong>.</p>
             <div class="version-tag">Version ${process.env.APP_VERSION || '1.0.0'}</div>
         </div>
     </body>
