@@ -1,0 +1,86 @@
+name:  Build & Deploy to ECS
+
+on:
+  push:
+    branches: [main]      # ← triggers on every push to main
+  workflow_dispatch:       # ← allows manual trigger from GitHub UI
+
+permissions:
+  id-token: write          # ← Required for OIDC authentication
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+  CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # ─── Step 1: Get the code ───────────────────────────────
+      - name:  Checkout code
+        uses: actions/checkout@v4
+
+      # ─── Step 2: Authenticate to AWS via OIDC ───────────────
+      - name:  Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ─── Step 3: Sanity check ───────────────────────────────
+      - name:  Verify AWS identity
+        run: aws sts get-caller-identity
+
+      # ─── Step 4: Login to ECR ───────────────────────────────
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ─── Step 5: Build & push Docker image ──────────────────
+      - name:  Build, tag & push image to ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}   # ← unique tag per commit
+        run: |
+          echo "Building image with tag: $IMAGE_TAG"
+
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+          # Pass image URI to next steps
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+          echo "Congratulation! Kingsley Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      # ─── Step 6: Update task definition ─────────────────────
+      - name:  Update ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      # ─── Step 7: Deploy to ECS ───────────────────────────────
+      - name:  Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true   # ← fails pipeline if deploy breaks
+
+      # ─── Step 8: Confirm success ─────────────────────────────
+      - name:  Deployment complete
+        run: |
+          echo "🎉 Successfully deployed to ECS, Odo Kingsley Uchenna You have done a wonderful Job!"
+          echo "Commit: ${{ github.sha }}"
+          echo "Deployed by: ${{ github.actor }}"
