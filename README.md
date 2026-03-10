@@ -370,7 +370,7 @@ aws ecs update-service --cluster my-app-cluster --service my-app-service --desir
 | `iam:PassRole` error | Missing PassRole permission | Add `iam:PassRole` for `ecs-task-execution-role` to GitHub Actions policy |
 
 ---
-
+You can read the full article here <a href = "https://medium.com/@RealKingHubs/how-i-built-a-production-grade-aws-ecs-deployment-pipeline-with-zero-stored-secrets-1f8b4c70afbe">Medium Article</a>
 ## License
 
 MIT — feel free to use this as a template for your own projects.
