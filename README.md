@@ -397,3 +397,4 @@ You can read the full article here <a href = "https://medium.com/@RealKingHubs/h
 ## License
 
 MIT — feel free to use this as a template for your own projects.
+<img width="1281" height="832" alt="image_7cf048c0" src="https://github.com/user-attachments/assets/2e1f5926-37c7-4efb-9e56-f1aac10b9db8" />
