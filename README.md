@@ -164,4 +164,4 @@ MIT — feel free to use this as a template for your own projects.
 
 ---
 
-<p align="center">Built with ☁️ by <a href="https://www.linkedin.com/in/kingsley-odo-8b81a6369/">Odo Kingsley Uchenna</a></p>
+<p align="center">Built by <a href="https://www.linkedin.com/in/kingsley-odo-8b81a6369/">Odo Kingsley Uchenna</a></p>
