@@ -1,8 +1,24 @@
-# 🚀 GitHub Actions → AWS ECS Deployment Pipeline
+<h1 align="center">🚀 GitHub Actions → AWS ECS Deployment Pipeline</h1>
 
-> **Zero-touch, production-grade CI/CD pipeline using GitHub Actions OIDC + Amazon ECS Fargate**
+<p align="center">
+  <img src="https://img.shields.io/badge/pipeline-passing-brightgreen"/>
+  <img src="https://img.shields.io/badge/AWS-ECS%20Fargate-orange"/>
+  <img src="https://img.shields.io/badge/Auth-OIDC-blue"/>
+  <img src="https://img.shields.io/badge/Container-Docker-blue"/>
+  <img src="https://img.shields.io/badge/IaC-Terraform-7B42BC"/>
+</p>
 
-![Pipeline Status](https://img.shields.io/badge/pipeline-passing-brightgreen) ![AWS](https://img.shields.io/badge/AWS-ECS%20Fargate-orange) ![Auth](https://img.shields.io/badge/Auth-OIDC-blue) ![IaC](https://img.shields.io/badge/Container-Docker-blue)
+> **Zero-touch, production-grade CI/CD pipeline using GitHub Actions OIDC + Amazon ECS Fargate. No stored secrets. No manual deployments. Just push and ship.**
+
+---
+
+## 🏆 Key Achievements
+
+- ✅ Eliminated all long-lived AWS credentials using **OIDC (Zero Secrets Architecture)**
+- ✅ Reduced deployment time to **under 3 minutes** from `git push` to live container
+- ✅ Implemented **self-healing ECS service** — crashed containers restart automatically
+- ✅ Designed a **One-Click Teardown Script** to prevent ghost resource billing
+- ✅ Full **CloudWatch observability** with 30-day log retention policy
 
 ---
 
@@ -17,6 +33,7 @@
 - [Phase 3 — ECS Cluster & Service](#phase-3--ecs-cluster--service)
 - [Phase 4 — GitHub Actions Pipeline](#phase-4--github-actions-pipeline)
 - [Phase 5 — Verification & Monitoring](#phase-5--verification--monitoring)
+- [Lessons Learned](#lessons-learned--engineering-insights)
 - [Cost Estimate](#cost-estimate)
 - [Troubleshooting](#troubleshooting)
 
@@ -32,11 +49,13 @@ This project demonstrates a **fully automated, secure CI/CD pipeline** that:
 - Logs everything to **CloudWatch**
 - **Self-heals** — if a container crashes, ECS restarts it automatically
 
+📖 **Read the full write-up on Medium:** [How I Built a Production-Grade AWS ECS Deployment Pipeline With Zero Stored Secrets](https://medium.com/@RealKingHubs/how-i-built-a-production-grade-aws-ecs-deployment-pipeline-with-zero-stored-secrets-1f8b4c70afbe)
+
 ---
 
 ## Architecture
-<img width="1155" height="758" alt="Screenshot 2026-03-07 214427" src="https://github.com/user-attachments/assets/f8443f07-865f-43b3-a23d-6aa6919f4c92" />
 
+<img width="1281" height="832" alt="image_7cf048c0" src="https://github.com/user-attachments/assets/2e1f5926-37c7-4efb-9e56-f1aac10b9db8" />
 ```
 git push origin main
         │
@@ -52,28 +71,37 @@ GitHub Actions (OIDC Auth — no secrets)
                 └─── Self-healing Service
 ```
 
-##  Lessons Learned & Engineering Insights
+---
 
-###  1. Security: The "Zero-Trust" Shift
-*   **The Challenge:** Storing `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in GitHub Secrets is a major security risk. If a repository is compromised, the keys are leaked.
-*   **The Solution:** Implemented **IAM OIDC (OpenID Connect)**. By establishing a trust relationship between GitHub and AWS, the pipeline now requests short-lived, temporary tokens.
-*   **Takeaway:** Credentials should never be static. **"Identity over Secrets"** is the production standard for modern DevOps.
+## Lessons Learned & Engineering Insights
 
-###  2. Infrastructure: Serverless Containerization
-*   **The Challenge:** Managing EC2 instances for a simple REST API adds unnecessary overhead (patching, scaling, OS management).
-*   **The Solution:** Leveraged **AWS ECS Fargate**. Since Fargate is serverless, I only defined the CPU/Memory at the task level.
-*   **Takeaway:** Moving from "Instance-managed" to "Task-managed" infrastructure reduces operational toil and allows for easier horizontal scaling.
+### 1. Security: The "Zero-Trust" Shift
+**The Challenge:** Storing `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in GitHub Secrets is a major security risk.
 
-###  3. Automation: Reducing the Feedback Loop
-*   **The Challenge:** Manual deployments are slow and prone to human error (forgetting to tag an image, mismatched environment variables).
-*   **The Solution:** Integrated a **Docker-first CI/CD workflow**. Every `git push` triggers a build, a push to ECR, and a rolling update in ECS.
-*   **Takeaway:** High-velocity teams rely on **"Push-to-Production."** Reducing deployment time to **under 3 minutes** drastically improves developer productivity.
+**The Solution:** Implemented **IAM OIDC**. By establishing a trust relationship between GitHub and AWS, the pipeline requests short-lived temporary tokens instead.
 
-###  4. Cloud Economics: Resource Lifecycle Management
-*   **The Challenge:** Cloud costs can spiral if "ghost" resources (ALBs, NAT Gateways, idle Tasks) are left running.
-*   **The Solution:** Developed a **One-Click Teardown Script** in PowerShell/Bash to automate the deletion of all 10+ AWS resources used in the project.
-*   **Takeaway:** Being a Cloud Engineer isn't just about building; it’s about **cost-effective architecture**. Verifying a $0.00 balance is as important as a successful deployment.
+**Takeaway:** Credentials should never be static. **"Identity over Secrets"** is the production standard for modern DevOps.
 
+### 2. Infrastructure: Serverless Containerization
+**The Challenge:** Managing EC2 instances for a simple REST API adds unnecessary overhead.
+
+**The Solution:** Leveraged **AWS ECS Fargate** — serverless containers where I only define CPU/Memory at the task level.
+
+**Takeaway:** Moving from "Instance-managed" to "Task-managed" infrastructure reduces operational toil significantly.
+
+### 3. Automation: Reducing the Feedback Loop
+**The Challenge:** Manual deployments are slow and prone to human error.
+
+**The Solution:** Every `git push` triggers a build, a push to ECR, and a rolling update in ECS automatically.
+
+**Takeaway:** Reducing deployment time to **under 3 minutes** drastically improves developer productivity.
+
+### 4. Cloud Economics: Resource Lifecycle Management
+**The Challenge:** Cloud costs spiral if idle resources are left running.
+
+**The Solution:** Built a **One-Click Teardown Script** to automate deletion of all AWS resources used in the project.
+
+**Takeaway:** Being a Cloud Engineer means thinking about **cost-effective architecture** at every stage.
 
 ---
 
@@ -89,284 +117,20 @@ GitHub Actions (OIDC Auth — no secrets)
 ---
 
 ## Project Structure
-
 ```
-my-app/
-├── app.js                        # Node.js application
-├── package.json                  # Dependencies
-├── Dockerfile                    # Container definition
-├── task-definition.json          # ECS task blueprint
+CICD-Automation-Pipeline/
+├── app.js                               # Node.js application
+├── package.json                         # Dependencies
+├── Dockerfile                           # Container definition
+├── task-definition.json                 # ECS task blueprint
 ├── github-actions-trust-policy.json     # IAM OIDC trust policy
 ├── github-actions-permissions.json      # IAM permissions policy
+├── screenshots/                         # Architecture diagrams
 └── .github/
     └── workflows/
-        └── deploy.yml            # CI/CD pipeline
+        └── deploy.yml                   # CI/CD pipeline definition
 ```
 
----
-
-## Phase 1 — App & Local Setup
-
-### 1. Create the Application
-
-**app.js**
-```javascript
-const http = require('http');
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({
-    message: 'Hello from ECS! 🚀',
-    version: process.env.APP_VERSION || '1.0.0'
-  }));
-});
-server.listen(3000, () => console.log('Server running on port 3000'));
-```
-
-**Dockerfile**
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install --production
-COPY . .
-EXPOSE 3000
-CMD ["node", "app.js"]
-```
-
-### 2. Configure AWS CLI
-
-```bash
-aws configure
-aws sts get-caller-identity   # Save the Account ID from output
-```
-
-### 3. Test Locally
-
-```bash
-docker build -t my-app .
-docker run -p 3000:3000 my-app
-curl http://localhost:3000
-```
-
----
-
-## Phase 2 — ECR Setup
-
-### 1. Create ECR Repository
-
-```bash
-aws ecr create-repository \
-  --repository-name my-app \
-  --region us-east-1 \
-  --image-scanning-configuration scanOnPush=true \
-  --image-tag-mutability IMMUTABLE
-```
-
-> 📌 Save the `repositoryUri` from the output
-
-### 2. Authenticate Docker to ECR
-
-```bash
-aws ecr get-login-password --region us-east-1 \
-  | docker login \
-    --username AWS \
-    --password-stdin \
-    YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
-```
-
-### 3. Push Initial Image
-
-```bash
-docker build -t my-app .
-docker tag my-app:latest YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/my-app:v1.0.0
-docker push YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/my-app:v1.0.0
-```
-
-### 4. Set Lifecycle Policy (keep last 10 images)
-
-```bash
-aws ecr put-lifecycle-policy \
-  --repository-name my-app \
-  --lifecycle-policy-text '{"rules":[{"rulePriority":1,"description":"Keep last 10","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":10},"action":{"type":"expire"}}]}'
-```
-
----
-
-## Phase 3 — ECS Cluster & Service
-
-### 1. Create Cluster
-
-```bash
-aws ecs create-cluster \
-  --cluster-name my-app-cluster \
-  --capacity-providers FARGATE \
-  --region us-east-1
-```
-
-### 2. Create CloudWatch Log Group
-
-```bash
-aws logs create-log-group --log-group-name /ecs/my-app --region us-east-1
-aws logs put-retention-policy --log-group-name /ecs/my-app --retention-in-days 30
-```
-
-### 3. Create Task Execution Role
-
-```bash
-aws iam create-role \
-  --role-name ecs-task-execution-role \
-  --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ecs-tasks.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
-
-aws iam attach-role-policy \
-  --role-name ecs-task-execution-role \
-  --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-```
-
-### 4. Register Task Definition
-
-Create `task-definition.json` (replace `YOUR_ACCOUNT_ID`):
-```json
-{
-  "family": "my-app",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256", "memory": "512",
-  "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecs-task-execution-role",
-  "containerDefinitions": [{
-    "name": "my-app",
-    "image": "YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/my-app:v1.0.0",
-    "essential": true,
-    "portMappings": [{ "containerPort": 3000, "protocol": "tcp" }],
-    "logConfiguration": {
-      "logDriver": "awslogs",
-      "options": {
-        "awslogs-group": "/ecs/my-app",
-        "awslogs-region": "us-east-1",
-        "awslogs-stream-prefix": "ecs"
-      }
-    }
-  }]
-}
-```
-
-```bash
-aws ecs register-task-definition --cli-input-json file://task-definition.json --region us-east-1
-```
-
-### 5. Create ECS Service
-
-```bash
-# Get VPC and subnet IDs first
-aws ec2 describe-vpcs --filters Name=isDefault,Values=true --query 'Vpcs[0].VpcId' --output text
-aws ec2 describe-subnets --filters Name=vpc-id,Values=YOUR_VPC_ID --query 'Subnets[*].SubnetId' --output text
-
-# Create security group
-aws ec2 create-security-group --group-name my-app-sg --description "ECS tasks SG" --vpc-id YOUR_VPC_ID
-aws ec2 authorize-security-group-ingress --group-id YOUR_SG_ID --protocol tcp --port 3000 --cidr 0.0.0.0/0
-
-# Create service
-aws ecs create-service \
-  --cluster my-app-cluster \
-  --service-name my-app-service \
-  --task-definition my-app \
-  --desired-count 1 \
-  --launch-type FARGATE \
-  --network-configuration "awsvpcConfiguration={subnets=[SUBNET1,SUBNET2],securityGroups=[SG_ID],assignPublicIp=ENABLED}" \
-  --region us-east-1
-```
-
----
-
-## Phase 4 — GitHub Actions Pipeline
-
-### 1. Create OIDC Provider
-
-```bash
-aws iam create-open-id-connect-provider \
-  --url https://token.actions.githubusercontent.com \
-  --client-id-list sts.amazonaws.com \
-  --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
-```
-
-### 2. Create IAM Role for GitHub Actions
-
-Save `github-actions-trust-policy.json` (replace placeholders), then:
-
-```bash
-aws iam create-role --role-name github-actions-deploy \
-  --assume-role-policy-document file://github-actions-trust-policy.json
-
-aws iam create-policy --policy-name github-actions-deploy-policy \
-  --policy-document file://github-actions-permissions.json
-
-aws iam attach-role-policy --role-name github-actions-deploy \
-  --policy-arn arn:aws:iam::YOUR_ACCOUNT_ID:policy/github-actions-deploy-policy
-```
-
-### 3. Add GitHub Repository Variables
-
-In GitHub → Settings → Secrets and variables → Actions → Variables:
-
-| Variable | Value |
-|----------|-------|
-| `AWS_ACCOUNT_ID` | Your AWS account ID |
-| `AWS_REGION` | `us-east-1` |
-| `ECR_REPOSITORY` | `my-app` |
-| `ECS_CLUSTER` | `my-app-cluster` |
-| `ECS_SERVICE` | `my-app-service` |
-| `CONTAINER_NAME` | `my-app` |
-
-### 4. Add Workflow File
-
-Create `.github/workflows/deploy.yml` — see full file in repo.
-
-### 5. Trigger Pipeline
-
-```bash
-git add .
-git commit -m "feat: add CI/CD pipeline"
-git push origin main
-```
-
----
-
-## Phase 5 — Verification & Monitoring
-
-### Check Service Health
-
-```bash
-aws ecs describe-services \
-  --cluster my-app-cluster \
-  --services my-app-service \
-  --region us-east-1 \
-  --query 'services[0].{Status:status,Running:runningCount,Desired:desiredCount}'
-```
-
-### Tail Live Logs
-
-```bash
-aws logs tail /ecs/my-app --follow --region us-east-1
-```
-
-### Get App Public IP
-
-```bash
-TASK_ARN=$(aws ecs list-tasks --cluster my-app-cluster --service-name my-app-service --query 'taskArns[0]' --output text --region us-east-1)
-ENI_ID=$(aws ecs describe-tasks --cluster my-app-cluster --tasks $TASK_ARN --query 'tasks[0].attachments[0].details[?name==`networkInterfaceId`].value' --output text --region us-east-1)
-PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids $ENI_ID --query 'NetworkInterfaces[0].Association.PublicIp' --output text --region us-east-1)
-curl http://$PUBLIC_IP:3000
-```
-
-### Scale Down (Save Money While Learning)
-
-```bash
-aws ecs update-service --cluster my-app-cluster --service my-app-service --desired-count 0 --region us-east-1
-```
-###  Scale back up (when you need it)
-
-```bash
-aws ecs update-service --cluster my-app-cluster --service my-app-service --desired-count 1 --region us-east-1
-```
 ---
 
 ## Cost Estimate
@@ -378,7 +142,7 @@ aws ecs update-service --cluster my-app-cluster --service my-app-service --desir
 | CloudWatch Logs | ~$0.50 |
 | **Total** | **~$9.55/month** |
 
-> 💡 Scale to `desired-count 0` when not using — brings cost to near $0
+> 💡 Scale to `desired-count 0` when not in use — brings cost to near **$0**
 
 ---
 
@@ -393,8 +157,11 @@ aws ecs update-service --cluster my-app-cluster --service my-app-service --desir
 | `iam:PassRole` error | Missing PassRole permission | Add `iam:PassRole` for `ecs-task-execution-role` to GitHub Actions policy |
 
 ---
-You can read the full article here <a href = "https://medium.com/@RealKingHubs/how-i-built-a-production-grade-aws-ecs-deployment-pipeline-with-zero-stored-secrets-1f8b4c70afbe">Medium Article</a>
+
 ## License
 
 MIT — feel free to use this as a template for your own projects.
-<img width="1281" height="832" alt="image_7cf048c0" src="https://github.com/user-attachments/assets/2e1f5926-37c7-4efb-9e56-f1aac10b9db8" />
+
+---
+
+<p align="center">Built with ☁️ by <a href="https://www.linkedin.com/in/kingsley-odo-8b81a6369/">Odo Kingsley Uchenna</a></p>
